@@ -1,0 +1,57 @@
+---
+title: "Моделируя иконичность"
+author: "Киммельман, Клезович, Мороз"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    toc_position: right
+    code_folding: hide
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, error = FALSE)
+```
+
+## Берем данные
+
+```{r}
+library(tidyverse)
+sign <- read_csv2("refactored_table.csv")
+sign %>% 
+  filter(non_iconic == "0") %>% 
+  select(4, 6, 1, 2, 8:11) %>% 
+  mutate_all(funs(factor)) -> 
+  sign
+sign
+summary(sign)
+```
+
+## MCA
+Проведем MCA. Какой процент объясненной дисперсии содержат новые компоненты?
+
+```{r}
+library(MASS)
+sign_mca <- mca(sign[,-c(1:4)], nf = 11)
+data_frame(pca = factor(paste0("PC", seq_along(sign_mca$d)), 
+                        levels = paste0("PC", seq_along(sign_mca$d))),
+           eigenvalue = sign_mca$d^2,
+           perc_var = round(sign_mca$d^2/sum(sign_mca$d^2), 3),
+           cum_perc_var = cumsum(perc_var)) %>% 
+  arrange(desc(perc_var)) ->
+  sign_mca_results
+
+sign_mca_results %>% 
+  gather(method, value, perc_var:cum_perc_var) %>%
+  mutate(method = factor(method, levels = c("perc_var", "cum_perc_var"))) %>% 
+  ggplot(aes(pca, value, label = round(value, 2)))+
+  geom_col(fill = "lightblue")+
+  geom_text(aes(y = value + 0.05))+
+  facet_grid(~method, scales = "free_x")+
+  theme_bw()+
+  labs(x = "", y = "",
+       title = "Impact of each PC in MCA model")
+```
+
+Первые две переменные описывают 64% дисперсии. Для MCA это высокий процент.
