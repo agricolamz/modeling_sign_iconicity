@@ -33,7 +33,7 @@ summary(sign)
 
 ```{r}
 library(MASS)
-sign_mca <- mca(sign[,-c(1:4)], nf = 11)
+sign_mca <- mca(sign[,-c(2:3)], nf = 28)
 data_frame(pca = factor(paste0("PC", seq_along(sign_mca$d)), 
                         levels = paste0("PC", seq_along(sign_mca$d))),
            eigenvalue = sign_mca$d^2,
@@ -54,4 +54,18 @@ sign_mca_results %>%
        title = "Impact of each PC in MCA model")
 ```
 
-Первые две переменные описывают 64% дисперсии. Для MCA это высокий процент. Посмотрим, как распеделены исследуемые единицы в новом пространстве.
+Первые две переменные описывают 64% дисперсии. Для MCA это высокий процент. Посмотрим, как распеделены исследуемые единицы в новом пространстве. Построим биплот.
+
+```{r}
+# data frame for ggplot
+cats = apply(sign[,-c(2:3)], 2, function(x) nlevels(as.factor(x)))
+data.frame(sign_mca$cs,  Variable = rep(names(cats), cats)) %>% 
+  ggplot(aes(x = X1, y = X2, label = rownames(.))) +
+   geom_hline(yintercept = 0, colour = "gray70") +
+   geom_vline(xintercept = 0, colour = "gray70") +
+   geom_text(aes(colour = Variable)) +
+   ggtitle("MCA plot of variables using R package MASS")+
+  theme_bw()+
+  scale_x_continuous(limits = c(-0.15, 0.2))
+```
+
